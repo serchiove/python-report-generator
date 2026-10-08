@@ -1,11 +1,9 @@
-HEAD
 .venv/
 venv/
 __pycache__/
 *.py[cod]
 data/raw/*.csv
 data/reports/*.txt
-=======
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -224,4 +222,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-bcbe848fe61646cb3f507905a15f34fdcc8d0738
