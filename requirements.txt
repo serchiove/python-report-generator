@@ -1,1 +1,1 @@
-# Este proyecto usa solamente la biblioteca estándar de Python.
+psycopg[binary]==3.3.6
