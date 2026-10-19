@@ -12,7 +12,7 @@ from psycopg import sql
 
 from src.database import conectar, inicializar_esquema
 from src.repositorio import consultar_ventas, guardar_ventas
-
+from src.procesador import consultar_resumen
 
 @unittest.skipUnless(
     os.environ.get("POSTGRES_TEST_DATABASE")
@@ -89,6 +89,58 @@ class PostgreSQLTest(unittest.TestCase):
         guardar_ventas(self.conexion, ventas, self.lote)
         self.assertEqual(len(consultar_ventas(self.conexion)), 2)
         self.assertEqual(self.conexion.execute("SELECT count(*) AS n FROM productos").fetchone()["n"], 2)
+
+    
+    def test_resumen_sql(self):
+        guardar_ventas(self.conexion, self.ventas, self.lote)
+
+        resumen = consultar_resumen(self.conexion)
+
+        self.assertEqual(resumen["numero_ventas"], 3)
+        self.assertEqual(resumen["unidades_vendidas"], 15)
+        self.assertEqual(resumen["total_facturado"], Decimal("313.20"))
+        self.assertEqual(resumen["ticket_promedio"], Decimal("104.40"))
+        self.assertEqual(
+            resumen["por_categoria"],
+            [("Tecnología", Decimal("245.70")), ("Oficina", Decimal("67.50"))],
+        )
+        self.assertEqual(
+            resumen["por_producto"],
+            [
+                ("Teclado", Decimal("171.00")),
+                ("Mouse", Decimal("74.70")),
+                ("Cuaderno", Decimal("67.50")),
+            ],
+        )
+        self.assertIsInstance(resumen["total_facturado"], Decimal)
+        self.assertIsInstance(resumen["ticket_promedio"], Decimal)
+
+    def test_resumen_base_vacia(self):
+        resumen = consultar_resumen(self.conexion)
+
+        self.assertEqual(resumen["numero_ventas"], 0)
+        self.assertEqual(resumen["unidades_vendidas"], 0)
+        self.assertEqual(resumen["total_facturado"], Decimal("0.00"))
+        self.assertEqual(resumen["ticket_promedio"], Decimal("0.00"))
+        self.assertEqual(resumen["por_categoria"], [])
+        self.assertEqual(resumen["por_producto"], [])
+
+    def test_resumen_empate_ordena_por_nombre(self):
+        ventas = [
+            dict(self.ventas[0], producto="Beta", cantidad=1,
+                 precio_unitario=Decimal("10.00"), fila_origen=2),
+            dict(self.ventas[0], producto="Alfa", cantidad=1,
+                 precio_unitario=Decimal("10.00"), fila_origen=3),
+        ]
+        guardar_ventas(self.conexion, ventas, self.lote)
+
+        resumen = consultar_resumen(self.conexion)
+
+        self.assertEqual(
+            resumen["por_producto"],
+            [("Alfa", Decimal("10.00")), ("Beta", Decimal("10.00"))],
+        )
+
 
 
 if __name__ == "__main__":
