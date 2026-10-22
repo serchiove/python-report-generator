@@ -2,6 +2,11 @@
 
 Aplicación de consola en Python para procesar ventas y generar reportes de texto.
 
+Segunda entrega: importación validada de CSV, almacenamiento relacional en
+PostgreSQL, métricas mediante SQL y reporte con importes decimales.
+Consulta la [guía de defensa](docs/guia_defensa.md) y el
+[registro de verificación](docs/verificacion_entrega.md).
+
 ## Preparación en Windows
 
 Abre una terminal de PowerShell en la carpeta que contiene `main.py`:

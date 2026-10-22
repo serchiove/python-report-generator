@@ -1,4 +1,4 @@
-"""Comandos de la parte de Sergio, independientes del flujo CSV existente."""
+"""Herramientas de conexión, inicialización e importación de PostgreSQL."""
 
 import argparse
 from datetime import date

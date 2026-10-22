@@ -50,6 +50,19 @@ class FlujoPostgreSQLTest(unittest.TestCase):
             self.assertFalse((Path(d) / "final.txt").exists())
             self.assertEqual(consultar_ventas(self.conexion), [])
 
+    def test_fallo_de_salida_permite_reintento_sin_duplicar(self):
+        archivo = Path(__file__).resolve().parent.parent / "data/examples/ventas_ejemplo.csv"
+        with TemporaryDirectory() as d:
+            destino = Path(d)
+            # Un directorio no puede reemplazarse con un archivo de reporte.
+            (destino / "ocupado.txt").mkdir()
+            with self.assertRaises(OSError):
+                ejecutar_flujo(self.conexion, archivo, destino, "ocupado.txt")
+            recuperado = ejecutar_flujo(self.conexion, archivo, destino, "final.txt")
+            self.assertEqual(recuperado["importacion"]["ventas_insertadas"], 0)
+            self.assertEqual(recuperado["resumen"]["numero_ventas"], 3)
+            self.assertEqual(recuperado["resumen"]["total_facturado"], Decimal("313.20"))
+
 
 class ComandoTest(unittest.TestCase):
     def test_error_conexion_retorna_codigo_uno(self):
