@@ -1,4 +1,5 @@
 from collections import defaultdict
+from decimal import Decimal
 
 
 def consultar_resumen(conexion):
@@ -61,16 +62,19 @@ def consultar_resumen(conexion):
 
 def calcular_resumen(ventas):
 
-    total_facturado = 0.0
+    usa_decimal = any(isinstance(venta["total"], Decimal) for venta in ventas)
+    tipo_importe = Decimal if usa_decimal else float
+    total_facturado = tipo_importe(0)
     unidades_vendidas = 0
-    total_por_categoria = defaultdict(float)
-    total_por_producto = defaultdict(float)
+    total_por_categoria = defaultdict(tipo_importe)
+    total_por_producto = defaultdict(tipo_importe)
 
     for venta in ventas:
-        total_facturado += venta["total"]
+        importe = Decimal(str(venta["total"])) if usa_decimal else venta["total"]
+        total_facturado += importe
         unidades_vendidas += venta["cantidad"]
-        total_por_categoria[venta["categoria"]] += venta["total"]
-        total_por_producto[venta["producto"]] += venta["total"]
+        total_por_categoria[venta["categoria"]] += importe
+        total_por_producto[venta["producto"]] += importe
 
     return {
         "numero_ventas": len(ventas),

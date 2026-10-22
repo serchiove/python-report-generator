@@ -9,13 +9,19 @@ import sys
 import psycopg
 
 from src.database import conectar, inicializar_esquema
+from src.importador import importar_ventas
 from src.repositorio import consultar_ventas, guardar_ventas
 
 
 def main():
     parser = argparse.ArgumentParser(description="Preparación y prueba de PostgreSQL")
-    parser.add_argument("accion", choices=["conexion", "inicializar", "demo", "listar"])
+    parser.add_argument("accion", choices=["conexion", "inicializar", "demo", "listar", "importar"])
+    parser.add_argument("archivo", nargs="?", help="CSV UTF-8 para la acción importar")
     args = parser.parse_args()
+    if args.accion == "importar" and not args.archivo:
+        parser.error("importar requiere la ruta de un CSV")
+    if args.accion != "importar" and args.archivo:
+        parser.error("la ruta CSV solo se admite con importar")
     try:
         with conectar() as conexion:
             if args.accion == "conexion":
@@ -37,13 +43,21 @@ def main():
                 lote = sha256(b"demo-sergio-postgresql-v1").hexdigest()
                 nuevas = guardar_ventas(conexion, ventas, lote)
                 print(f"Ventas nuevas: {nuevas}. Repetir la demo no duplica registros.")
+            elif args.accion == "importar":
+                resultado = importar_ventas(conexion, args.archivo)
+                print(f"Ventas válidas: {resultado['ventas_validas']}")
+                print(f"Ventas nuevas: {resultado['ventas_insertadas']}")
+                print(f"Ventas ya existentes: {resultado['ventas_ya_existentes']}")
+                print(f"Filas descartadas: {len(resultado['filas_invalidas'])}")
+                for error in resultado["filas_invalidas"]:
+                    print(error)
             else:
                 ventas = consultar_ventas(conexion)
                 for venta in ventas:
                     print(f"{venta['fecha']} | {venta['producto']} | {venta['cantidad']} | {venta['total']:.2f}")
                 print(f"Registros: {len(ventas)}")
         return 0
-    except (psycopg.Error, ValueError) as error:
+    except (psycopg.Error, ValueError, OSError) as error:
         if isinstance(error, psycopg.OperationalError):
             print("No se pudo conectar. Revisa el servidor y las variables PG*.", file=sys.stderr)
         else:

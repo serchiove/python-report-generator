@@ -6,6 +6,8 @@ from hashlib import sha256
 import os
 import unittest
 from uuid import uuid4
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import psycopg
 from psycopg import sql
@@ -13,6 +15,7 @@ from psycopg import sql
 from src.database import conectar, inicializar_esquema
 from src.repositorio import consultar_ventas, guardar_ventas
 from src.procesador import consultar_resumen
+from src.importador import importar_ventas
 
 @unittest.skipUnless(
     os.environ.get("POSTGRES_TEST_DATABASE")
@@ -91,6 +94,31 @@ class PostgreSQLTest(unittest.TestCase):
         self.assertEqual(self.conexion.execute("SELECT count(*) AS n FROM productos").fetchone()["n"], 2)
 
     
+    def test_importacion_csv_real_y_reimportacion(self):
+        ruta = Path(__file__).resolve().parent.parent / "data" / "examples" / "ventas_ejemplo.csv"
+        resultado = importar_ventas(self.conexion, ruta)
+        self.assertEqual(resultado["ventas_validas"], 3)
+        self.assertEqual(resultado["ventas_insertadas"], 3)
+        self.assertEqual(len(resultado["filas_invalidas"]), 1)
+        self.assertTrue(resultado["filas_invalidas"][0].startswith("Fila 5:"))
+        segundo = importar_ventas(self.conexion, ruta)
+        self.assertEqual(segundo["ventas_insertadas"], 0)
+        self.assertEqual(segundo["ventas_ya_existentes"], 3)
+        self.assertEqual(consultar_resumen(self.conexion)["total_facturado"], Decimal("313.20"))
+
+    def test_importacion_con_salto_de_fila_y_csv_roto(self):
+        with TemporaryDirectory() as d:
+            ruta = Path(d) / "ventas.csv"
+            encabezado = "fecha,producto,categoria,cantidad,precio_unitario\n"
+            ruta.write_text(encabezado + "2026-08-01,Error,Tecnología,0,1.00\n"
+                            + "2026-08-01,Correcto,Tecnología,1,0.10\n", encoding="utf-8")
+            importar_ventas(self.conexion, ruta)
+            self.assertEqual(consultar_ventas(self.conexion)[0]["fila_origen"], 3)
+            ruta.write_text(encabezado + '2026-08-01,"sin cierre', encoding="utf-8")
+            with self.assertRaises(ValueError):
+                importar_ventas(self.conexion, ruta)
+            self.assertEqual(len(consultar_ventas(self.conexion)), 1)
+
     def test_resumen_sql(self):
         guardar_ventas(self.conexion, self.ventas, self.lote)
 
