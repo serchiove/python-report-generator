@@ -5,7 +5,7 @@ def generar_reporte(resumen, filas_invalidas, carpeta_reportes, nombre_reporte):
     """Recibe el resumen acordado con Ricardo; admite float y Decimal.
 
     filas_invalidas contiene las incidencias de la importación actual,
-    no un historial de errores de la base de datos.
+    no un historial de errores de la base de datos. None indica que no se importó.
     """
     carpeta_reportes.mkdir(parents=True, exist_ok=True)
     ruta_reporte = carpeta_reportes / nombre_reporte
@@ -35,11 +35,14 @@ def generar_reporte(resumen, filas_invalidas, carpeta_reportes, nombre_reporte):
 
     lineas.extend([
         "", "INCIDENCIAS DE LA IMPORTACIÓN ACTUAL", "-" * 48,
-        f"Filas descartadas por errores: {len(filas_invalidas)}",
     ])
-    if filas_invalidas:
-        lineas.extend(f"- {error}" for error in filas_invalidas)
+    if filas_invalidas is None:
+        lineas.append("Sin importación en esta ejecución; no se consultó un historial de incidencias.")
     else:
-        lineas.append("No se registraron filas inválidas en esta ejecución.")
+        lineas.append(f"Filas descartadas por errores: {len(filas_invalidas)}")
+        if filas_invalidas:
+            lineas.extend(f"- {error}" for error in filas_invalidas)
+        else:
+            lineas.append("No se registraron filas inválidas en esta ejecución.")
     ruta_reporte.write_text("\n".join(lineas) + "\n", encoding="utf-8")
     return ruta_reporte

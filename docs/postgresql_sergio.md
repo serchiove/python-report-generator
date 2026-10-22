@@ -1,8 +1,9 @@
 # Integración PostgreSQL de Sergio
 
 Esta rama incluye el esquema, conexión Psycopg 3 y persistencia transaccional.
-`postgres.py` permite demostrar esta parte sin esperar la integración de los
-módulos de los compañeros. `main.py` conserva por ahora su flujo CSV original.
+`postgres.py` permite demostrar la conexión y persistencia de forma independiente.
+`main.py` integra el CSV validado, la persistencia, el resumen SQL y el reporte.
+La opción `--solo-reporte` consulta PostgreSQL sin importar un archivo.
 
 ## Preparación local
 
@@ -97,8 +98,9 @@ La validación del repositorio protege la persistencia incluso con otros cliente
 `consultar_ventas` retorna una lista de diccionarios con fecha de tipo `date`,
 precio y total de tipo `Decimal`, nombres, cantidad e identidad del lote.
 Ricardo puede usar ese contrato y agregar sus consultas de métricas. El procesador
-actual usa un acumulador float, por lo que deberá adaptarse a Decimal antes de
-integrarlo. Melissa recibe el resumen resultante y adapta el reporte y README.
+conserva Decimal al recibir esos importes. El flujo principal utiliza directamente
+`consultar_resumen`, con las consultas SQL de Ricardo. Melissa recibe ese resumen
+en su generador de reportes.
 
 Los parámetros SQL se envían aparte del texto. Cada lote se guarda en una
 transacción. Reimportar el mismo archivo no duplica filas; un archivo modificado

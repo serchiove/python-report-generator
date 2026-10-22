@@ -2,8 +2,9 @@
 
 Esta parte lee el CSV, valida cada fila y guarda las ventas válidas mediante
 el repositorio PostgreSQL de Sergio. Usa el resumen SQL de Ricardo en las
-pruebas para verificar la facturación. La unión definitiva con el reporte
-de Melissa desde `main.py` queda para la tarea de integración.
+pruebas para verificar la facturación. `main.py` integra ahora este importador,
+el resumen SQL y el reporte de Melissa; `postgres.py importar` permite probar
+solo la importación de forma independiente.
 
 ## Ejecución
 
@@ -54,7 +55,7 @@ las ventas se calculan sobre los mismos bytes, sin reabrir el archivo.
 `importar_ventas(conexion, ruta)` devuelve un diccionario con `lote_hash`,
 `ventas_validas`, `ventas_insertadas`, `ventas_ya_existentes` y `filas_invalidas`.
 Estas incidencias pertenecen a la importación actual y podrán entregarse al
-generador cuando se integre el flujo completo. No son un historial de errores.
+generador en el flujo completo. No son un historial de errores.
 
 ## Pruebas y exposición
 

@@ -14,25 +14,29 @@ muestran aparte para identificar qué filas se descartaron en la importación».
 
 ## Diapositiva 8: demostración y organización
 
-1. Ejecutar `python demo_reporte.py` desde el entorno del proyecto.
-2. Abrir `data/reports/reporte_demo_melissa.txt`.
+1. Configurar PostgreSQL según el README e inicializar las tablas.
+2. En una base de demostración vacía, ejecutar `python main.py` y abrir
+   `data/reports/reporte_final.txt`.
 3. Comprobar 3 registros, 15 unidades, total 313.20 y promedio 104.40.
-4. Mostrar Tecnología 245.70, Oficina 67.50 y la incidencia ficticia.
-5. Explicar cómo el README permite reproducir la demo.
+4. Mostrar Tecnología 245.70, Oficina 67.50 y la incidencia real del CSV de ejemplo.
+5. Repetir `python main.py`: 0 ventas nuevas. Ejecutar `python main.py --solo-reporte`
+   para mostrar la generación desde los datos persistidos.
 6. Mostrar commits y revisiones reales del equipo cuando existan.
 
-Guion: «Esta demostración usa un resumen ficticio para comprobar el formato de
-mi módulo de manera independiente. La persistencia de Sergio se puede probar
-con sus comandos. La demostración completa desde PostgreSQL requiere integrar
-las validaciones y las consultas del equipo. Documentamos el estado real para
-que cada paso se pueda reproducir».
+Guion: «Esta demostración importa un CSV con datos ficticios a PostgreSQL,
+consulta el resumen y genera el reporte. La fila con cantidad cero se descarta.
+Al repetir el mismo archivo no se duplican ventas. También podemos regenerar
+el reporte sin volver a importar. El README documenta el recorrido completo».
+
+`demo_reporte.py` permanece como demostración independiente del formato,
+sin conexión a PostgreSQL; no debe confundirse con la ejecución completa.
 
 Tiempo sugerido: 1 minuto para explicar el reporte y 1 minuto y medio para
-la demo y el cierre. Ajustar el guion cuando se integre el flujo final.
+la demo y el cierre.
 
 ## Revisión de Gabriela que corresponde a Melissa
 
-Cuando su parte esté disponible, comprobar con datos ficticios:
+Durante la revisión cruzada, comprobar con datos ficticios:
 
 - Una fila válida llega al resumen con el importe esperado.
 - Cantidad cero, fecha inválida, NaN y campo ausente producen incidencias.
