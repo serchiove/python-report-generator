@@ -34,14 +34,20 @@ $clave = Read-Host 'Contraseña de PostgreSQL' -AsSecureString
 $env:PGPASSWORD = [System.Net.NetworkCredential]::new('', $clave).Password
 .\.venv\Scripts\python.exe postgres.py conexion
 .\.venv\Scripts\python.exe postgres.py inicializar
-.\.venv\Scripts\python.exe postgres.py demo
-.\.venv\Scripts\python.exe postgres.py listar
-Remove-Item Env:PGPASSWORD
+.\.venv\Scripts\python.exe main.py
 ```
 
-La demo inserta 3 ventas, 15 unidades y un total de 313.20 en una base vacía.
-Al repetirla inserta 0 ventas nuevas. `inicializar` crea tablas e índices,
+El ejemplo CSV inserta 3 ventas, 15 unidades y un total de 313.20 en una base vacía.
+Al repetirlo inserta 0 ventas nuevas. `inicializar` crea tablas e índices,
 no crea el servidor, rol o base ni modifica esquemas antiguos incompatibles.
+
+`postgres.py demo` es una prueba auxiliar con otro lote ficticio. No se debe
+mezclar con el CSV en una base donde se espere el total de ejemplo 313.20.
+Conservamos PGPASSWORD durante todas las ejecuciones. Solo al finalizar:
+
+```powershell
+Remove-Item Env:PGPASSWORD
+```
 
 Si Windows bloquea la DLL del paquete binario, Psycopg también puede utilizar
 su implementación Python con la biblioteca del PostgreSQL instalado. Ajusta
@@ -64,9 +70,9 @@ $env:PSYCOPG_IMPL = 'python'
 - El hash SHA-256 del lote y la fila original forman una identidad única.
 - Nombres se limpian de espacios exteriores; las mayúsculas se conservan.
 
-## Contrato para integrar las otras partes
+## Contrato entre los módulos del equipo
 
-Gabriela debe entregar una lista de diccionarios con:
+El extractor entrega una lista de diccionarios con:
 
 ```python
 {
@@ -97,7 +103,7 @@ La validación del repositorio protege la persistencia incluso con otros cliente
 
 `consultar_ventas` retorna una lista de diccionarios con fecha de tipo `date`,
 precio y total de tipo `Decimal`, nombres, cantidad e identidad del lote.
-Ricardo puede usar ese contrato y agregar sus consultas de métricas. El procesador
+Usamos ese contrato para las consultas y cálculos del proyecto. El procesador
 conserva Decimal al recibir esos importes. El flujo principal utiliza directamente
 `consultar_resumen`, con las consultas SQL de Ricardo. Melissa recibe ese resumen
 en su generador de reportes.
