@@ -76,9 +76,20 @@ public > Tables; actualiza la vista si las tablas todavía no aparecen.
 - Melissa: formato del reporte, demo independiente y documentación disponibles.
 - `main.py` sigue leyendo CSV y calculando con el procesador actual; todavía
   no genera el reporte desde PostgreSQL.
-- Falta integrar las validaciones de Gabriela y las consultas con `Decimal` de
-  Ricardo. El extractor actual aún requiere corregir fechas, precios no finitos
-  y campos ausentes antes de demostrar esas validaciones como completas.
+- Ricardo: consultas SQL del resumen con JOIN, GROUP BY y Decimal disponibles.
+- Gabriela: validación del CSV e importación a PostgreSQL disponibles en esta
+  rama; consulta [la guía de importación](docs/importacion_gabriela.md).
+- Falta unir importación, resumen SQL y reporte en un flujo desde `main.py`.
+
+Para importar el ejemplo versionado, con la conexión PostgreSQL configurada:
+
+```powershell
+.\.venv\Scripts\python.exe postgres.py importar data/examples/ventas_ejemplo.csv
+```
+
+Contiene tres ventas válidas y una inválida. Reimportar el mismo archivo no
+duplica ventas. La demo ficticia de Sergio es otro lote distinto: no mezcles
+ambas demos en la misma base si necesitas conservar el total de ejemplo 313.20.
 
 `generar_reporte` recibe las claves `numero_ventas`, `unidades_vendidas`,
 `total_facturado`, `ticket_promedio`, `por_categoria` y `por_producto`.
