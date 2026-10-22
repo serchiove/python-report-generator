@@ -43,7 +43,8 @@ Durante la revisión cruzada, comprobar con datos ficticios:
 - Cada incidencia conserva el número de fila original.
 - Reimportar el mismo archivo no aumenta las ventas persistidas.
 
-Estos puntos son criterios pendientes de revisión, no pruebas ya superadas.
+La suite automatizada comprueba estas condiciones. La revisión entre integrantes
+se documenta por separado en los comentarios del pull request.
 
 ## Evidencias que se deben guardar
 
@@ -52,5 +53,6 @@ Estos puntos son criterios pendientes de revisión, no pruebas ya superadas.
 - Enlace del commit o PR de Melissa y revisión real de Ricardo.
 - Resultado de la revisión de Gabriela cuando se realice.
 
-Antes de exponer: ensayar el README desde una copia nueva; comprobar el flujo
-integrado y reemplazar las afirmaciones pendientes por resultados verificados.
+Antes de exponer: comprobar la conexión del equipo de presentación, ejecutar el
+ejemplo y abrir el reporte. Usar una base de demostración vacía si se necesita
+mostrar exactamente el total 313.20, sin mezclar lotes de otras demos.
