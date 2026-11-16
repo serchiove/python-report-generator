@@ -266,7 +266,7 @@ puerto `5434`, para pgAdmin o para ejecutar la suite contra otra base aislada.
 
 Al publicar un release en GitHub, `publish-image.yml` publica la imagen en GHCR.
 La imagen es un artefacto de contenedor listo para ejecutarse; no convierte el
-programa de consola en un servicio web ni crea por sí sola una base administrada.
+programa de consola en un servicio web.
 
 ## Otros comandos
 

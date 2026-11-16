@@ -17,18 +17,17 @@ registra importación, persistencia PostgreSQL, consultas y generación de repor
 ## Aplicación al generador de reportes
 
 El generador es una aplicación por consola: recibe un CSV, persiste ventas en
-PostgreSQL y produce un archivo de texto. La opción de nube más directa consiste
-en conservar el programa como proceso por lotes y conectar PostgreSQL a un
-servicio administrado (DBaaS). Así se aprovecha el diseño existente y no se
-simula que pgAdmin sea una aplicación alojada.
+PostgreSQL y produce un archivo de texto. Para esta preparación, la aplicación
+se ejecuta localmente; la parte de nube se limita a GitHub Actions y GitHub
+Container Registry.
 
 ```text
-CSV de entrada → aplicación Python → PostgreSQL administrado (DBaaS)
+CSV de entrada → aplicación Python → PostgreSQL de demostración en Compose
                          │
-                         └── reporte de texto
+                         └── reporte de texto local
 
-GitHub Issues → GitHub Actions (CI: pruebas con PostgreSQL temporal)
-              → publicación versionada de imagen en GHCR al publicar un release
+GitHub Issues → GitHub Actions (CI con PostgreSQL temporal)
+              → GHCR (imagen versionada al publicar un release)
 ```
 
 ## Qué queda preparado en este checkout
@@ -43,22 +42,17 @@ GitHub Issues → GitHub Actions (CI: pruebas con PostgreSQL temporal)
   ejecutar la suite y, si pasa, construye la imagen y la publica en GitHub
   Container Registry (GHCR) con la etiqueta del release y `latest`.
 
-La publicación del contenedor demuestra entrega de un artefacto a un registro
-en la nube. No significa que el proceso de consola quede ejecutándose como un
-servicio web ni que ya exista una base administrada conectada.
+La publicación del contenedor entrega un artefacto versionado a un registro.
+No convierte el programa de consola en un servicio web; el reporte sigue
+generándose en el entorno donde se ejecuta el programa.
 
 ## Beneficios y limitaciones que explicar
 
-**Beneficios:** PostgreSQL administrado evita instalar y parchear el motor en
-una computadora del equipo; los datos persisten aunque termine el proceso;
-GitHub Actions ejecuta la misma suite en una máquina limpia; el registro conserva
-una imagen asociada a una versión publicada.
+**Beneficios:** GitHub Actions ejecuta la suite en una máquina limpia y el
+registro conserva una imagen asociada a una versión publicada.
 
-**Limitaciones:** se requiere internet y credenciales del proveedor; los planes
-gratuitos pueden suspenderse o tener límites; deben configurarse copias de
-seguridad, accesos de red, costos y región; una imagen publicada no constituye
-por sí sola un despliegue de aplicación; este programa todavía genera el reporte
-en el entorno donde se invoca.
+**Limitaciones:** publicar una imagen no despliega por sí solo la aplicación;
+este programa todavía genera el reporte en el entorno donde se invoca.
 
 ## Evidencias para la presentación
 
@@ -71,8 +65,8 @@ en el entorno donde se invoca.
 4. Publicar un release de práctica solo cuando el equipo esté listo; mostrar el
    paquete resultante en GHCR. El workflow publica una imagen externa al
    repositorio cuando se publica un release.
-5. Explicar la arquitectura DBaaS elegida, el beneficio observado y al menos
-   una limitación real del servicio que se use.
+5. Explicar qué parte del flujo utiliza GitHub Actions o GHCR, qué beneficio
+   aporta y qué límite tiene la imagen publicada.
 
 ## Pruebas locales ejecutadas
 
@@ -91,7 +85,7 @@ PostgreSQL 18.6 temporal en Docker:
   workflows/plantilla y la compilación sintáctica Python.
 
 Estas comprobaciones fueron locales. No se publicó un release, no se ejecutó
-el workflow alojado en GitHub ni se conectó un proveedor de base administrada.
+el workflow de publicación alojado en GitHub.
 
 No publicar credenciales, capturas con secretos ni datos de clientes. La clave
 `demo-local-only` de `compose.yaml` es solo para la demostración local; no debe
@@ -101,10 +95,7 @@ reutilizarse en una plataforma externa.
 
 - Confirmar la rúbrica y el formato de entrega que indique el docente; no están
   incluidos en el PDF recibido.
-- Elegir y probar una instancia PostgreSQL administrada que el equipo pueda
-  usar. Configurar las variables `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` y
-  `PGPASSWORD` como secretos/variables del entorno que ejecute la aplicación.
 - Acordar quién registra incidentes, revisa pull requests y presenta cada parte.
 - Ejecutar los workflows alojados luego de publicar los cambios en GitHub y
-  conectar/probar una base administrada. La preparación local aún no se ha
-  publicado ni desplegado a una cuenta cloud.
+  desplegar la imagen en un entorno de ejecución. La preparación local aún no se
+  ha desplegado a ese entorno.
