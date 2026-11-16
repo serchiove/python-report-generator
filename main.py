@@ -6,6 +6,8 @@ import sys
 
 import psycopg
 
+from src.generador_qr import generar_qr
+
 from src.config import ARCHIVO_VENTAS, CARPETA_REPORTES, NOMBRE_REPORTE
 from src.database import conectar
 from src.generador import generar_reporte
@@ -23,6 +25,7 @@ def ejecutar_flujo(conexion, archivo, carpeta_reportes, nombre_reporte):
     resumen = consultar_resumen(conexion)
     errores = importacion["filas_invalidas"] if importacion is not None else None
     ruta = generar_reporte(resumen, errores, carpeta_reportes, nombre_reporte)
+    generar_qr(resumen, ruta)
     return {"importacion": importacion, "resumen": resumen, "ruta_reporte": ruta}
 
 
