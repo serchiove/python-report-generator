@@ -12,6 +12,11 @@ y generar otro reporte sin volver a importar el archivo.
 
 **Flujo principal:** CSV → validación → PostgreSQL → resumen SQL → reporte.
 
+La preparación para la tercera entrega y los pasos de seguimiento de incidentes,
+CI, empaquetado y nube están en [docs/avance_3.md](docs/avance_3.md). La guía
+distingue el alcance que figura en el sílabo de las evidencias sugeridas para
+aplicar los temas al proyecto.
+
 ## Organización del equipo
 
 Organizamos el desarrollo en cuatro responsabilidades y reunimos los módulos
@@ -236,6 +241,32 @@ Guardamos el precio en cada venta para conservar su valor histórico.
   el archivo antes de escribir en la base.
 - Si ocurre un error al guardar el lote, revertimos sus cambios mediante una
   transacción. Las consultas utilizan parámetros para los valores recibidos.
+
+## Demostración en contenedores
+
+Con Docker Desktop y Compose disponibles, ejecutamos desde la raíz del proyecto:
+
+```powershell
+docker compose up --build
+```
+
+El comando inicia un PostgreSQL local aislado, ejecuta la importación y deja el
+reporte en `data/reports/reporte_final.txt`. Para volver a generar el reporte
+con los datos persistidos, ejecutamos:
+
+```powershell
+docker compose run --rm app --solo-reporte
+```
+
+El volumen de la base se conserva al detener Compose. Para borrar únicamente
+esta base local de demostración y empezar de cero, ejecutamos
+`docker compose down --volumes`. No usamos el password de ejemplo fuera del
+entorno local. PostgreSQL queda accesible solo desde esta computadora en el
+puerto `5434`, para pgAdmin o para ejecutar la suite contra otra base aislada.
+
+Al publicar un release en GitHub, `publish-image.yml` publica la imagen en GHCR.
+La imagen es un artefacto de contenedor listo para ejecutarse; no convierte el
+programa de consola en un servicio web ni crea por sí sola una base administrada.
 
 ## Otros comandos
 

@@ -1,0 +1,54 @@
+name: Reportar incidente
+description: Registrar un error reproducible del generador de reportes.
+title: "[Incidente]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Incluye datos ficticios. No pegues contraseñas, archivos privados ni datos personales."
+  - type: textarea
+    id: resumen
+    attributes:
+      label: Resumen
+      description: ¿Qué ocurrió y en qué parte del flujo?
+      placeholder: Al importar el CSV de ejemplo...
+    validations:
+      required: true
+  - type: textarea
+    id: reproducir
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Ejecutar ...
+        2. Seleccionar ...
+        3. Observar ...
+    validations:
+      required: true
+  - type: textarea
+    id: esperado-real
+    attributes:
+      label: Resultado esperado y resultado observado
+    validations:
+      required: true
+  - type: dropdown
+    id: severidad
+    attributes:
+      label: Severidad
+      options:
+        - Baja: afecta presentación o comodidad
+        - Media: bloquea una función con alternativa
+        - Alta: impide importar, guardar o generar el reporte
+    validations:
+      required: true
+  - type: input
+    id: entorno
+    attributes:
+      label: Entorno
+      description: Versión de Python, PostgreSQL y sistema operativo; omite datos de conexión.
+    validations:
+      required: true
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: Evidencia segura
+      description: Mensaje de error o captura sin credenciales ni datos privados.
