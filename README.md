@@ -377,3 +377,52 @@ Esta entrega funciona por consola y no incluye una interfaz web, usuarios de
 negocio ni comprobantes con varios detalles. Los datos de demostración son
 ficticios. Las incidencias corresponden a la ejecución actual y el control de
 duplicados aplica al mismo archivo y fila, no a ventas similares en otros lotes.
+
+## Menú gráfico de escritorio
+
+Para abrir el panel de funcionalidades en Windows:
+
+```powershell
+.\.venv\Scripts\python.exe menu_grafico.py
+```
+
+Introduce servidor, puerto, base, usuario y contraseña en la ventana. Pulsa
+**Probar conexión** y, si hace falta, **Crear tablas**. La base y el usuario deben
+estar creados previamente en PostgreSQL. La contraseña no se guarda en archivos.
+Selecciona el CSV y el destino TXT; luego utiliza **Importar CSV + TXT y QR**
+o **Solo reporte + QR**. Este último consulta las ventas persistidas sin importar.
+El resultado y las incidencias aparecen en la ventana. **Abrir TXT** y **Abrir QR**
+muestran los últimos archivos generados desde el panel. El QR contiene las
+métricas en texto, no una dirección web. Se pide confirmación antes de reemplazar
+archivos existentes. El panel utiliza Tkinter, incluido habitualmente con Python
+para Windows, y las dependencias de requirements.txt.
+
+### Exportar el reporte a PDF
+
+En el menú gráfico, genera primero un reporte y pulsa **Exportar a PDF**.
+Selecciona el nombre y la ubicación del PDF; al terminar puedes abrirlo desde
+el diálogo de confirmación. La exportación utiliza el último TXT generado desde
+el menú, conserva todas sus secciones y agrega páginas cuando es necesario.
+No requiere consultar nuevamente PostgreSQL. Instala las dependencias con
+`.\.venv\Scripts\python.exe -m pip install -r requirements.txt`.
+
+### Gráfico por categoría
+
+Después de generar un reporte desde el menú, pulsa **Gráfico por categoría**.
+Se abre una ventana con barras ordenadas por facturación e importes con dos
+decimales. El gráfico usa el resumen del último reporte generado, sin volver a
+consultar PostgreSQL. Si hay muchas categorías, utiliza la barra de desplazamiento.
+Una base vacía muestra un mensaje sin ventas; los importes cero se muestran sin
+barra. Esta funcionalidad utiliza Tkinter y no añade dependencias.
+
+
+### Datos ampliados para el gráfico
+
+`data/examples/ventas_graficos.csv` contiene datos ficticios: 80 ventas válidas,
+8 categorías, 24 productos y fechas del 1 al 19 de octubre de 2026.
+El lote suma 360 unidades y una facturación de 15420.50.
+En el menú, selecciona ese CSV, pulsa **Importar CSV + TXT y QR** y después
+**Gráfico por categoría**. El resumen abarca toda la base: si ya estaba el lote
+original, se suman sus 3 ventas y 313.20. Volver a importar el mismo archivo
+sin modificarlo no agrega ventas duplicadas. Este ejemplo amplía las barras
+del gráfico existente; no añade tipos de gráficos nuevos.
