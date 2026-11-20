@@ -33,6 +33,10 @@ def generar_reporte(resumen, filas_invalidas, carpeta_reportes, nombre_reporte):
         else:
             lineas.append("Sin datos.")
 
+    if 'rentabilidad' in resumen:
+        from src.rentabilidad import lineas_rentabilidad
+        lineas.extend(['', 'RENTABILIDAD BRUTA', '-' * 48])
+        lineas.extend(lineas_rentabilidad(resumen['rentabilidad']))
     lineas.extend([
         "", "INCIDENCIAS DE LA IMPORTACIÓN ACTUAL", "-" * 48,
     ])

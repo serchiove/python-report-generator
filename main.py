@@ -9,10 +9,12 @@ import psycopg
 from src.generador_qr import generar_qr
 
 from src.config import ARCHIVO_VENTAS, CARPETA_REPORTES, NOMBRE_REPORTE
-from src.database import conectar
+from src.database import conectar, inicializar_esquema
 from src.generador import generar_reporte
 from src.importador import importar_ventas
 from src.procesador import consultar_resumen
+from src.repositorio import consultar_ventas
+from src.rentabilidad import calcular_rentabilidad
 
 
 def ejecutar_flujo(conexion, archivo, carpeta_reportes, nombre_reporte):
@@ -21,8 +23,11 @@ def ejecutar_flujo(conexion, archivo, carpeta_reportes, nombre_reporte):
     La importación se confirma antes de consultar el resumen de toda la base.
     Sus incidencias corresponden al archivo actual, no al historial de ventas.
     """
+    # Aplica también la migración aditiva de costos en bases ya existentes.
+    inicializar_esquema(conexion)
     importacion = importar_ventas(conexion, archivo) if archivo is not None else None
     resumen = consultar_resumen(conexion)
+    resumen['rentabilidad'] = calcular_rentabilidad(consultar_ventas(conexion))
     errores = importacion["filas_invalidas"] if importacion is not None else None
     ruta = generar_reporte(resumen, errores, carpeta_reportes, nombre_reporte)
     generar_qr(resumen, ruta)

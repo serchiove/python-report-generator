@@ -7,6 +7,7 @@ from xml.sax.saxutils import escape
 
 
 SECCIONES = {
+    'RENTABILIDAD BRUTA': 'rentabilidad',
     "RESUMEN GENERAL": "resumen",
     "FACTURACIÓN POR CATEGORÍA": "categorias",
     "PRODUCTOS POR FACTURACIÓN": "productos",
@@ -216,6 +217,11 @@ def exportar_pdf(ruta_txt, ruta_pdf):
         elementos.append(_tabla_detalle(productos, documento.width))
     else:
         elementos.append(Paragraph("Sin datos de producto para mostrar.", estilos["texto"]))
+
+    if secciones['rentabilidad']:
+        elementos.append(Paragraph('Rentabilidad bruta', estilos['seccion']))
+        for linea in secciones['rentabilidad']:
+            elementos.append(Paragraph(escape(linea), estilos['texto']))
 
     incidencias = secciones["incidencias"]
     elementos.append(Paragraph("Incidencias de la importación", estilos["seccion"]))

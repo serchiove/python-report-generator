@@ -15,7 +15,7 @@ def _validar_fila(fila, numero_fila):
     """Retorna una venta con Decimal y su número físico original en el CSV."""
     campos = {clave: valor.strip() for clave, valor in fila.items()}
     for clave, valor in campos.items():
-        if not valor:
+        if not valor and clave != 'costo_unitario':
             raise ValueError(f"{clave} es obligatorio")
     if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", campos["fecha"]):
         raise ValueError("fecha debe usar YYYY-MM-DD")
@@ -43,9 +43,21 @@ def _validar_fila(fila, numero_fila):
     if not re.fullmatch(r"[0-9]+(?:\.[0-9]{1,2})?", campos["precio_unitario"]):
         raise ValueError("precio_unitario debe usar punto y como máximo dos decimales")
     precio = precio.quantize(Decimal("0.01"))
-    return dict(fecha=fecha, producto=campos["producto"], categoria=campos["categoria"],
+    costo = None
+    if campos.get('costo_unitario'):
+        texto = campos['costo_unitario']
+        if not re.fullmatch(r'[0-9]+(?:\.[0-9]{1,2})?', texto):
+            raise ValueError('costo_unitario debe ser no negativo y usar hasta dos decimales')
+        costo = Decimal(texto)
+        if costo >= Decimal('10000000000'):
+            raise ValueError('costo_unitario debe ser menor a 10000000000')
+        costo = costo.quantize(Decimal('0.01'))
+    venta = dict(fecha=fecha, producto=campos["producto"], categoria=campos["categoria"],
                 cantidad=cantidad, precio_unitario=precio, total=cantidad * precio,
                 fila_origen=numero_fila)
+    if 'costo_unitario' in campos:
+        venta['costo_unitario'] = costo
+    return venta
 
 
 def cargar_lote(ruta_archivo):
@@ -65,9 +77,10 @@ def cargar_lote(ruta_archivo):
         encabezados = next(lector, None)
         if encabezados is None:
             raise ValueError("El CSV está vacío; faltan los encabezados")
-        if len(encabezados) != len(COLUMNAS) or set(encabezados) != COLUMNAS:
+        if (len(encabezados) != len(set(encabezados))
+                or set(encabezados) not in (COLUMNAS, COLUMNAS | {'costo_unitario'})):
             raise ValueError("Encabezados inválidos; se requieren una vez cada uno: "
-                             + ", ".join(sorted(COLUMNAS)))
+                             + ", ".join(sorted(COLUMNAS)) + '; costo_unitario es opcional')
         while True:
             numero_fila = lector.line_num + 1
             valores = next(lector, None)
@@ -76,7 +89,7 @@ def cargar_lote(ruta_archivo):
             if not valores:
                 continue
             if len(valores) != len(encabezados):
-                errores.append(f"Fila {numero_fila}: se esperaban 5 campos y llegaron {len(valores)}")
+                errores.append(f"Fila {numero_fila}: se esperaban {len(encabezados)} campos y llegaron {len(valores)}")
                 continue
             try:
                 ventas.append(_validar_fila(dict(zip(encabezados, valores)), numero_fila))

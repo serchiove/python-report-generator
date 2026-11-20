@@ -2,8 +2,8 @@
 
 ## Nuestro proyecto
 
-Desarrollamos una aplicación de consola en Python para automatizar el procesamiento
-de ventas. Para la segunda entrega integramos una base de datos PostgreSQL: leemos
+Desarrollamos una aplicación de escritorio y consola en Python para automatizar el procesamiento
+de ventas. Integramos una base de datos PostgreSQL: leemos
 un CSV, validamos cada registro, almacenamos las ventas válidas, consultamos las
 métricas mediante SQL y generamos un reporte de texto.
 
@@ -40,7 +40,7 @@ de cada etapa. Las revisiones entre integrantes se registran en GitHub.
 - pgAdmin para crear la base y consultar los datos.
 - PowerShell para ejecutar los comandos de Windows que aparecen a continuación.
 
-La aplicación funciona por consola. pgAdmin administra la base de datos;
+La aplicación funciona mediante Tkinter y por consola. pgAdmin administra la base de datos;
 no es una interfaz propia del programa. No necesitamos activar el entorno
 virtual: los comandos utilizan directamente su ejecutable de Python.
 
@@ -309,8 +309,12 @@ Conservamos dos demostraciones auxiliares:
 
 ## Pruebas automatizadas
 
-La suite contiene **42 pruebas**, incluidas las de PostgreSQL real y el recorrido
-completo. El detalle histórico está en el
+La suite contiene **80 pruebas**, incluidas las de PostgreSQL real y el recorrido
+completo. La ampliación incorpora 20 casos de límites y formatos CSV, 6 de
+gráficos, 6 de exportación PDF y 6 de persistencia y restricciones SQL.
+La ejecución local del 20 de noviembre de 2026 terminó con **80 aprobadas,
+0 fallidas y 0 omitidas** en la base aislada `reportes_pruebas`.
+El detalle histórico está en el
 [registro de verificación](docs/verificacion_entrega.md).
 
 Para repetirlas localmente, iniciamos PostgreSQL y ejecutamos el preparador de
@@ -318,7 +322,7 @@ pruebas. Lee la conexión de `.env`, crea `reportes_pruebas` si todavía no exis
 y ejecuta toda la suite dentro de esa base:
 
 ```powershell
-\.venv\Scripts\python.exe scripts\run_postgres_tests.py
+.\.venv\Scripts\python.exe scripts\run_postgres_tests.py
 ```
 
 Las pruebas usan esquemas temporales que eliminan al terminar. No modifican la
@@ -412,7 +416,70 @@ Remove-Item Env:PGPASSWORD
 
 ## Alcance
 
-Esta entrega funciona por consola y no incluye una interfaz web, usuarios de
+### Recuperación de inversión y gráficos
+
+El botón **Recuperación de inversión** abre una proyección independiente del
+histórico de ventas. Se ingresan inversión inicial, cobros mensuales, pagos
+de productos, otros pagos, ahorros atribuibles y horizonte de 1 a 120 meses.
+Todos los importes deben corresponder a la misma moneda.
+
+Para justificar comprar el software, selecciona **Inversión en software** y
+usa únicamente ahorros y cobros adicionales atribuibles a la herramienta, junto
+con sus pagos adicionales. Para evaluar el negocio completo, selecciona
+**Inversión en negocio** y utiliza los cobros y pagos de ese proyecto.
+No conviertas el total histórico de ventas en un ingreso mensual.
+
+El flujo mensual es cobros + ahorros - pagos de productos - otros pagos.
+La recuperación se produce al cierre del primer mes con saldo acumulado >= 0;
+el primer excedente de caja requiere saldo > 0. No se confunde recuperación con
+utilidad mensual. Un flujo no positivo no recupera una inversión positiva.
+Si la recuperación ocurre después del horizonte elegido, se indica ese hecho.
+
+Incluye gráfico acumulado de tres escenarios, gráfico de entradas y pagos
+mensuales, tabla por mes y PDF con supuestos, gráfico y tabla. Los escenarios
+conservador y optimista varían cobros y ahorros -20% y +20%, manteniendo los
+pagos constantes. Son sensibilidades ilustrativas, no probabilidades.
+El ejemplo ficticio de software supone inversión 3000, ahorro mensual 550
+y pago mensual 50: flujo 500, recuperación al cierre del mes 6 y primer saldo
+acumulado positivo en el mes 7. Sustituye esos supuestos por evidencia del cliente.
+
+Se asumen flujos constantes y cobros/pagos al cierre de mes. La proyección
+no calcula beneficio contable ni incluye inflación, descuento financiero o
+financiación; incorpora todos los pagos relevantes en tus supuestos. Tampoco
+garantiza ganancias. Una modificación de supuestos exige recalcular antes de
+exportar el PDF. El análisis no cambia ventas almacenadas.
+
+Referencia conceptual: [ACCA, Payback and discounted payback](https://www.accaglobal.com/gb/en/student/exam-support-resources/foundation-level-study-resources/ffm/ffm-technical-articles/discounted-payback.html).
+
+### Análisis de rentabilidad histórica
+
+El menú incluye **Rentabilidad y descuentos** y **Elegir ejemplo con costos**.
+Selecciona el ejemplo, importa y genera el reporte; luego abre el análisis.
+`data/examples/ventas_rentabilidad.csv` incluye productos con utilidad,
+margen bajo, pérdida bruta y costo desconocido para demostrar cada estado.
+
+El CSV acepta una sexta columna opcional `costo_unitario`, con hasta dos
+decimales y valor no negativo. Puede quedar vacía para costo desconocido.
+Los CSV de cinco columnas siguen funcionando. El costo se conserva por venta,
+sin actualizar retrospectivamente las ventas anteriores. El esquema se amplía
+al generar un reporte o inicializar tablas, conservando los registros existentes.
+
+La utilidad bruta es el ingreso menos el costo de los productos vendidos;
+el margen bruto es utilidad / ingresos × 100. Se excluyen las ventas sin costo
+y se muestra la cobertura del análisis. Con ingresos cero el margen se indica
+como no calculable. No se incluyen gastos operativos ni se promete ganancia neta.
+El umbral orientativo de margen bajo es 20%.
+
+El simulador acepta descuentos entre 0 y 100%, mantiene volumen y costo
+constantes y no modifica la base. El reporte TXT y su exportación PDF incluyen
+la rentabilidad por producto y categoría. El PDF refleja las ventas originales,
+no el escenario hipotético del simulador.
+
+Agregar costos cambia los bytes y el hash de un CSV: importarlo se considera
+otro lote. No uses esta vía para corregir costos de ventas ya importadas, pues
+agregaría nuevas ventas. Los ejemplos son ficticios.
+
+Esta entrega funciona por consola y escritorio y no incluye una interfaz web, usuarios de
 negocio ni comprobantes con varios detalles. Los datos de demostración son
 ficticios. Las incidencias corresponden a la ejecución actual y el control de
 duplicados aplica al mismo archivo y fila, no a ventas similares en otros lotes.

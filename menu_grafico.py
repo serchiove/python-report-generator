@@ -12,6 +12,8 @@ from src.config import ARCHIVO_VENTAS_DEMO, CARPETA_REPORTES, NOMBRE_REPORTE
 from src.database import cargar_entorno_local, conectar, inicializar_esquema
 from src.generador_pdf import exportar_pdf
 from src.grafico_categorias import mostrar_grafico
+from src.panel_rentabilidad import mostrar_rentabilidad
+from src.panel_proyeccion import mostrar_proyeccion
 
 
 class Aplicacion(tk.Tk):
@@ -101,6 +103,11 @@ class Aplicacion(tk.Tk):
         self.boton(acciones, "Abrir QR", lambda: self.abrir(True))
         self.boton(acciones, "Exportar PDF", self.exportar)
         self.boton(acciones, "Ver categorías", self.graficar)
+        negocio = ttk.Frame(marco, style='App.TFrame')
+        negocio.pack(fill='x', pady=(0, 8))
+        self.boton(negocio, 'Rentabilidad y descuentos', self.rentabilidad, estilo='Primary.TButton')
+        self.boton(negocio, 'Elegir ejemplo con costos', self.elegir_ejemplo_costos)
+        self.boton(negocio, 'Recuperación de inversión', lambda: mostrar_proyeccion(self))
         self.estado = tk.StringVar(value="Listo. Prueba la conexión para comenzar.")
         self.etiqueta_estado = ttk.Label(marco, textvariable=self.estado, font=("Segoe UI", 9, "bold"), foreground="#2563eb")
         self.etiqueta_estado.pack(anchor="w", pady=(0, 6))
@@ -119,6 +126,10 @@ class Aplicacion(tk.Tk):
         boton = ttk.Button(padre, text=texto, command=accion, style=estilo)
         boton.pack(side="left", padx=(0, 8))
         self.botones.append(boton)
+
+    def elegir_ejemplo_costos(self):
+        self.csv.set(str(Path(__file__).resolve().parent / 'data/examples/ventas_rentabilidad.csv'))
+        self.estado.set('Ejemplo con costos seleccionado. Pulsa Importar CSV + generar.')
 
     def elegir_csv(self):
         ruta = filedialog.askopenfilename(filetypes=[("Archivo CSV", "*.csv")])
@@ -220,6 +231,12 @@ class Aplicacion(tk.Tk):
             os.startfile(str(ruta.resolve()))
         except OSError as error:
             messagebox.showerror("No se pudo abrir", str(error))
+
+    def rentabilidad(self):
+        if self.resumen_actual is None:
+            messagebox.showinfo('Generar primero', 'Importa un CSV o genera desde la base para analizar la rentabilidad.')
+            return
+        mostrar_rentabilidad(self, self.resumen_actual['rentabilidad'], self.exportar)
 
     def graficar(self):
         if self.resumen_actual is None:

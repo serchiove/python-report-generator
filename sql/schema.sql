@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS ventas (
     UNIQUE (lote_hash, fila_origen)
 );
 
+-- Migración aditiva: las ventas anteriores mantienen costo desconocido (NULL).
+ALTER TABLE ventas ADD COLUMN IF NOT EXISTS costo_unitario NUMERIC(12,2)
+    CHECK (costo_unitario >= 0 AND costo_unitario < 'Infinity'::numeric);
+
 CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(id_categoria);
 CREATE INDEX IF NOT EXISTS idx_ventas_producto ON ventas(id_producto);
 CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha);

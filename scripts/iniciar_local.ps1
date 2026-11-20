@@ -3,11 +3,25 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# PowerShell 7 puede convertir un motor apagado en una excepción antes del reintento.
+$PSNativeCommandUseErrorActionPreference = $false
 $raizProyecto = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $raizProyecto
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    throw "Docker Desktop no está instalado o no está disponible en PATH."
+    $rutasDocker = @(
+        (Join-Path $env:LOCALAPPDATA 'Programs\DockerDesktop\resources\bin'),
+        (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin')
+    )
+    foreach ($rutaDocker in $rutasDocker) {
+        if (Test-Path -LiteralPath (Join-Path $rutaDocker 'docker.exe')) {
+            $env:PATH = "$rutaDocker;$env:PATH"
+            break
+        }
+    }
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        throw "No encuentro Docker Desktop. Instálalo o comprueba su ubicación antes de iniciar el proyecto."
+    }
 }
 
 & docker info *> $null
@@ -19,7 +33,7 @@ if ($LASTEXITCODE -ne 0) {
         throw "Docker está instalado, pero no encuentro Docker Desktop para iniciarlo."
     }
     Write-Host "Abriendo Docker Desktop..."
-    Start-Process -FilePath $dockerDesktop
+    Start-Process -FilePath $dockerDesktop -WindowStyle Hidden
     $motorListo = $false
     for ($intento = 0; $intento -lt 60; $intento++) {
         Start-Sleep -Seconds 2
@@ -30,14 +44,22 @@ if ($LASTEXITCODE -ne 0) {
         }
     }
     if (-not $motorListo) {
-        throw "Docker Desktop no inició el motor. Abre Docker Desktop y espera a que indique que está en ejecución."
+        & docker info
+        throw "Docker no inició después de 120 segundos. Revisa el error anterior y el estado del motor en Docker Desktop."
     }
+}
+
+& docker compose version
+if ($LASTEXITCODE -ne 0) {
+    throw "Docker responde, pero Docker Compose no está disponible. Repara o actualiza Docker Desktop."
 }
 
 Write-Host "Iniciando PostgreSQL local..."
 & docker compose up -d db
 if ($LASTEXITCODE -ne 0) {
-    throw "No se pudo iniciar PostgreSQL. Abre Docker Desktop y vuelve a intentarlo."
+    & docker compose ps -a
+    & docker compose logs --tail 20 db
+    throw "No se pudo iniciar PostgreSQL. Revisa el error anterior; si indica que el puerto 5434 está ocupado, comprueba qué proceso lo utiliza."
 }
 
 $conectada = $false
@@ -51,7 +73,9 @@ for ($intento = 0; $intento -lt 30; $intento++) {
 }
 
 if (-not $conectada) {
-    throw "PostgreSQL no respondió después de 60 segundos. Revisa Docker Desktop."
+    & docker compose ps -a
+    & docker compose logs --tail 20 db
+    throw "Docker está activo, pero PostgreSQL no respondió después de 60 segundos. Revisa los registros anteriores."
 }
 Write-Host "PostgreSQL está listo. La app leerá la conexión desde .env."
 

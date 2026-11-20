@@ -44,6 +44,15 @@ def guardar_ventas(conexion, ventas, lote_hash):
     with conexion.transaction():
         for venta in ventas:
             producto, categoria, fecha, cantidad, precio, fila = _preparar_venta(venta)
+            costo = venta.get('costo_unitario')
+            if costo is not None:
+                try:
+                    costo = Decimal(str(costo))
+                except InvalidOperation as error:
+                    raise ValueError('costo_unitario inválido') from error
+                if (not costo.is_finite() or not Decimal('0') <= costo < Decimal('10000000000')
+                        or costo != costo.quantize(Decimal('0.01'))):
+                    raise ValueError('costo_unitario debe ser finito, no negativo y tener hasta dos decimales')
             # El conflicto actualiza al mismo valor y permite RETURNING
             # también si otro proceso creó el catálogo concurrentemente.
             id_categoria = conexion.execute(
@@ -58,9 +67,9 @@ def guardar_ventas(conexion, ventas, lote_hash):
             ).fetchone()["id_producto"]
             fila_insertada = conexion.execute(
                 "INSERT INTO ventas (fecha, id_producto, cantidad, precio_unitario, "
-                "lote_hash, fila_origen) VALUES (%s, %s, %s, %s, %s, %s) "
+                "lote_hash, fila_origen, costo_unitario) VALUES (%s, %s, %s, %s, %s, %s, %s) "
                 "ON CONFLICT (lote_hash, fila_origen) DO NOTHING RETURNING id_venta",
-                (fecha, id_producto, cantidad, precio, lote_hash, fila),
+                (fecha, id_producto, cantidad, precio, lote_hash, fila, costo),
             ).fetchone()
             insertadas += fila_insertada is not None
     return insertadas
@@ -71,7 +80,7 @@ def consultar_ventas(conexion):
     return conexion.execute(
         "SELECT v.id_venta, v.fecha, p.nombre AS producto, c.nombre AS categoria, "
         "v.cantidad, v.precio_unitario, v.cantidad * v.precio_unitario AS total, "
-        "v.lote_hash, v.fila_origen FROM ventas v "
+        "v.lote_hash, v.fila_origen, v.costo_unitario FROM ventas v "
         "JOIN productos p USING (id_producto) "
         "JOIN categorias c USING (id_categoria) ORDER BY v.id_venta"
     ).fetchall()
