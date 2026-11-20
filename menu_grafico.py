@@ -8,19 +8,20 @@ from tkinter import filedialog, messagebox, ttk
 
 import psycopg
 from main import ejecutar_flujo
-from src.config import ARCHIVO_VENTAS, CARPETA_REPORTES, NOMBRE_REPORTE
-from src.database import conectar, inicializar_esquema
+from src.config import ARCHIVO_VENTAS_DEMO, CARPETA_REPORTES, NOMBRE_REPORTE
+from src.database import cargar_entorno_local, conectar, inicializar_esquema
 from src.generador_pdf import exportar_pdf
 from src.grafico_categorias import mostrar_grafico
 
 
 class Aplicacion(tk.Tk):
     def __init__(self):
+        cargar_entorno_local()
         super().__init__()
-        self.title("Reportes de ventas | Panel de control")
-        self.geometry("1000x780")
-        self.minsize(820, 650)
-        self.configure(bg="#eef2f7")
+        self.title("Ventas | Centro de reportes")
+        self.geometry("1120x850")
+        self.minsize(920, 700)
+        self.configure(bg="#f1f5f9")
         self.resultados = queue.Queue()
         self.botones = []
         self.ocupado = False
@@ -29,38 +30,55 @@ class Aplicacion(tk.Tk):
         self.campos = {}
         estilo = ttk.Style(self)
         estilo.theme_use("clam")
-        estilo.configure("TFrame", background="#eef2f7")
-        estilo.configure("TLabel", background="#eef2f7", foreground="#172b4d", font=("Segoe UI", 10))
-        estilo.configure("Title.TLabel", font=("Segoe UI", 24, "bold"))
-        estilo.configure("TButton", font=("Segoe UI", 10), padding=9)
-        estilo.configure("TLabelframe", background="#eef2f7")
-        estilo.configure("TLabelframe.Label", font=("Segoe UI", 11, "bold"))
-        marco = ttk.Frame(self, padding=22)
+        estilo.configure("App.TFrame", background="#f1f5f9")
+        estilo.configure("Card.TFrame", background="#ffffff")
+        estilo.configure("TLabel", background="#f1f5f9", foreground="#172b4d", font=("Segoe UI", 10))
+        estilo.configure("Title.TLabel", background="#17345c", foreground="#ffffff", font=("Segoe UI", 23, "bold"))
+        estilo.configure("Subtitle.TLabel", background="#17345c", foreground="#dbeafe", font=("Segoe UI", 10))
+        estilo.configure("Section.TLabel", background="#ffffff", foreground="#17345c", font=("Segoe UI", 11, "bold"))
+        estilo.configure("Hint.TLabel", background="#ffffff", foreground="#64748b", font=("Segoe UI", 9))
+        estilo.configure("TButton", font=("Segoe UI", 9, "bold"), padding=(12, 9), background="#e8eef7", foreground="#17345c")
+        estilo.map("TButton", background=[("active", "#dbe5f2"), ("disabled", "#eef2f7")])
+        estilo.configure("Primary.TButton", background="#2563eb", foreground="#ffffff")
+        estilo.map("Primary.TButton", background=[("active", "#1d4ed8"), ("disabled", "#93a9cd")], foreground=[("disabled", "#ffffff")])
+        estilo.configure("TLabelframe", background="#ffffff", bordercolor="#dbe5f2")
+        estilo.configure("TLabelframe.Label", background="#ffffff", foreground="#17345c", font=("Segoe UI", 11, "bold"))
+        estilo.configure("TEntry", padding=8, fieldbackground="#ffffff")
+        estilo.configure("Vertical.TScrollbar", background="#e2e8f0", troughcolor="#f1f5f9")
+
+        marco = ttk.Frame(self, padding=20, style="App.TFrame")
         marco.pack(fill="both", expand=True)
-        ttk.Label(marco, text="Reportes de ventas", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(marco, text="Importa tu CSV, consulta PostgreSQL y comparte el resumen mediante QR.").pack(anchor="w", pady=(4, 16))
-        conexion = ttk.LabelFrame(marco, text="1. Conexión a PostgreSQL", padding=12)
-        conexion.pack(fill="x")
+        portada = tk.Frame(marco, bg="#17345c", padx=22, pady=18)
+        portada.pack(fill="x", pady=(0, 14))
+        ttk.Label(portada, text="Centro de reportes", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(portada, text="Importa ventas, consulta PostgreSQL y prepara resultados para compartir.", style="Subtitle.TLabel").pack(anchor="w", pady=(4, 0))
+
+        conexion = ttk.LabelFrame(marco, text="  1  Conexión a PostgreSQL  ", padding=(14, 12))
+        conexion.pack(fill="x", pady=(0, 12))
         valores = [("Servidor", "PGHOST", "localhost"), ("Puerto", "PGPORT", "5432"),
                    ("Base de datos", "PGDATABASE", "reportes_presentacion"),
                    ("Usuario", "PGUSER", "reportes_app"), ("Contraseña", "PGPASSWORD", "")]
         self.entradas = []
         for i, (titulo, clave, defecto) in enumerate(valores):
-            ttk.Label(conexion, text=titulo).grid(row=0, column=i, sticky="w", padx=4)
+            fila, columna = divmod(i, 3)
+            ttk.Label(conexion, text=titulo, background="#ffffff", foreground="#475569").grid(row=fila * 2, column=columna, sticky="w", padx=6, pady=(2, 0))
             variable = tk.StringVar(value=os.environ.get(clave, defecto))
             self.campos[clave] = variable
-            entrada = ttk.Entry(conexion, textvariable=variable, width=17, show="*" if clave == "PGPASSWORD" else "")
-            entrada.grid(row=1, column=i, sticky="ew", padx=4, pady=5)
-            conexion.columnconfigure(i, weight=1)
+            entrada = ttk.Entry(conexion, textvariable=variable, width=20, show="*" if clave == "PGPASSWORD" else "")
+            entrada.grid(row=fila * 2 + 1, column=columna, sticky="ew", padx=6, pady=(3, 8))
+            conexion.columnconfigure(columna, weight=1)
             self.entradas.append(entrada)
-        ttk.Label(conexion, text="La contraseña se utiliza en esta sesión y no se guarda en archivos.").grid(row=2, column=0, columnspan=5, sticky="w", pady=(4, 0))
-        acciones = ttk.Frame(marco)
-        acciones.pack(fill="x", pady=10)
-        self.boton(acciones, "Probar conexión", lambda: self.ejecutar("conexion"))
-        self.boton(acciones, "Crear tablas", lambda: self.ejecutar("tablas"))
-        archivos = ttk.LabelFrame(marco, text="2. Archivos del reporte", padding=12)
-        archivos.pack(fill="x")
-        self.csv = tk.StringVar(value=str(ARCHIVO_VENTAS))
+        ttk.Label(conexion, text="La conexión se carga desde el archivo .env local, ignorado por Git.", style="Hint.TLabel").grid(row=4, column=0, columnspan=3, sticky="w", padx=6)
+        acciones_db = ttk.Frame(conexion, style="Card.TFrame")
+        acciones_db.grid(row=0, column=3, rowspan=5, sticky="nsew", padx=(20, 4))
+        ttk.Label(acciones_db, text="Preparación", style="Section.TLabel").pack(anchor="w", pady=(0, 8))
+        self.boton(acciones_db, "Probar conexión", lambda: self.ejecutar("conexion"), estilo="Primary.TButton")
+        self.boton(acciones_db, "Crear tablas", lambda: self.ejecutar("tablas"))
+        conexion.columnconfigure(3, weight=0, minsize=175)
+
+        archivos = ttk.LabelFrame(marco, text="  2  Archivos del reporte  ", padding=(14, 12))
+        archivos.pack(fill="x", pady=(0, 12))
+        self.csv = tk.StringVar(value=str(ARCHIVO_VENTAS_DEMO))
         self.salida = tk.StringVar(value=str(CARPETA_REPORTES / NOMBRE_REPORTE))
         for fila, (texto, variable, elegir) in enumerate([
             ("CSV de entrada", self.csv, self.elegir_csv),
@@ -74,27 +92,31 @@ class Aplicacion(tk.Tk):
             boton.grid(row=fila, column=2)
             self.botones.append(boton)
         archivos.columnconfigure(1, weight=1)
-        ttk.Label(archivos, text="El QR se guarda junto al TXT. Si el nombre ya existe, ambos se reemplazan.").grid(row=2, column=0, columnspan=3, sticky="w", pady=5)
-        acciones = ttk.Frame(marco)
-        acciones.pack(fill="x", pady=12)
-        self.boton(acciones, "Importar CSV + TXT y QR", lambda: self.ejecutar("importar"))
-        self.boton(acciones, "Solo reporte + QR", lambda: self.ejecutar("reporte"))
+        ttk.Label(archivos, text="El QR se guarda junto al TXT. Si el nombre ya existe, ambos se reemplazan.", style="Hint.TLabel").grid(row=2, column=0, columnspan=3, sticky="w", pady=(5, 0))
+        acciones = ttk.LabelFrame(marco, text="  3  Generación y análisis  ", padding=(12, 10))
+        acciones.pack(fill="x", pady=(0, 12))
+        self.boton(acciones, "Importar CSV + generar", lambda: self.ejecutar("importar"), estilo="Primary.TButton")
+        self.boton(acciones, "Generar desde la base", lambda: self.ejecutar("reporte"))
         self.boton(acciones, "Abrir TXT", lambda: self.abrir(False))
         self.boton(acciones, "Abrir QR", lambda: self.abrir(True))
-        exportacion = ttk.Frame(marco)
-        exportacion.pack(fill="x", pady=(0, 10))
-        self.boton(exportacion, "Exportar a PDF", self.exportar)
-        self.boton(exportacion, "Gráfico por categoría", self.graficar)
+        self.boton(acciones, "Exportar PDF", self.exportar)
+        self.boton(acciones, "Ver categorías", self.graficar)
         self.estado = tk.StringVar(value="Listo. Prueba la conexión para comenzar.")
-        ttk.Label(marco, textvariable=self.estado).pack(anchor="w", pady=(0, 8))
-        self.texto = tk.Text(marco, wrap="word", font=("Consolas", 10), bg="white", fg="#172b4d", relief="flat", padx=12, pady=12, state="disabled")
-        self.texto.pack(fill="both", expand=True)
+        self.etiqueta_estado = ttk.Label(marco, textvariable=self.estado, font=("Segoe UI", 9, "bold"), foreground="#2563eb")
+        self.etiqueta_estado.pack(anchor="w", pady=(0, 6))
+        salida_frame = ttk.LabelFrame(marco, text="  Resultado y vista previa  ", padding=8)
+        salida_frame.pack(fill="both", expand=True)
+        self.texto = tk.Text(salida_frame, wrap="word", font=("Cascadia Code", 10), bg="#fbfdff", fg="#26364f", relief="flat", padx=14, pady=12, state="disabled", insertbackground="#17345c")
+        barra = ttk.Scrollbar(salida_frame, orient="vertical", command=self.texto.yview, style="Vertical.TScrollbar")
+        self.texto.configure(yscrollcommand=barra.set)
+        barra.pack(side="right", fill="y")
+        self.texto.pack(side="left", fill="both", expand=True)
         self.mostrar("Aquí aparecerán el resultado de la operación y el contenido del reporte.\nEl QR contiene un resumen de ventas en texto; no es un enlace web.")
         self.after(100, self.recibir)
         self.protocol("WM_DELETE_WINDOW", self.cerrar)
 
-    def boton(self, padre, texto, accion):
-        boton = ttk.Button(padre, text=texto, command=accion)
+    def boton(self, padre, texto, accion, estilo="TButton"):
+        boton = ttk.Button(padre, text=texto, command=accion, style=estilo)
         boton.pack(side="left", padx=(0, 8))
         self.botones.append(boton)
 

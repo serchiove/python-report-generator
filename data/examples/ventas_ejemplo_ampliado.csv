@@ -1,0 +1,27 @@
+fecha,producto,categoria,cantidad,precio_unitario
+2026-08-02,Laptop,Tecnología,1,2450.00
+2026-08-02,Webcam,Tecnología,2,149.90
+2026-08-02,SSD 1TB,Tecnología,1,389.00
+2026-08-03,Auriculares,Tecnología,3,79.90
+2026-08-03,Router WiFi,Tecnología,1,219.50
+2026-08-04,Memoria USB 64GB,Tecnología,4,34.90
+2026-08-02,Silla ergonómica,Oficina,1,620.00
+2026-08-02,Escritorio,Oficina,1,950.00
+2026-08-03,Lápiz,Oficina,20,1.50
+2026-08-03,Resma de papel,Oficina,5,22.90
+2026-08-04,Tinta negra,Oficina,2,69.90
+2026-08-04,Grapadora,Oficina,3,15.90
+2026-08-02,Lámpara LED,Hogar,2,45.90
+2026-08-03,Silla plegable,Hogar,4,89.90
+2026-08-04,Botella térmica,Hogar,5,32.90
+2026-08-05,Organizador,Hogar,3,27.50
+2026-08-05,Licuadora,Hogar,1,159.90
+2026-08-02,Detergente,Limpieza,6,18.90
+2026-08-03,Desinfectante,Limpieza,5,14.50
+2026-08-05,Escoba multiuso,Limpieza,2,25.00
+2026-08-03,Guantes de nitrilo,Seguridad,10,2.90
+2026-08-05,Casco de seguridad,Seguridad,2,49.90
+2026-08-05,Cable USB-C,Tecnología,5,12.90
+2026-08-06,Archivador,Oficina,4,8.50
+2026-08-06,Aspiradora compacta,Hogar,1,279.00
+2026-08-07,Monitor,Tecnología,0,120.00

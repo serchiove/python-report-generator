@@ -74,23 +74,28 @@ datos existentes.
 El programa creará las tablas en el paso de inicialización. Las instrucciones
 alternativas para psql están en la [guía de PostgreSQL](docs/postgresql_sergio.md).
 
-## Configuración de la conexión
+## Inicio local sin escribir la contraseña
 
-En la misma ventana de PowerShell donde ejecutaremos el programa:
+La configuración local se guarda una sola vez en `.env`, un archivo ignorado
+por Git. La interfaz y `main.py` cargan esos valores automáticamente; no hace
+falta volver a escribir ni copiar la contraseña en PowerShell o VS Code.
+
+Para iniciar PostgreSQL de Docker y abrir el menú gráfico con un solo comando:
 
 ```powershell
-$env:PGHOST = 'localhost'
-$env:PGPORT = '5432'
-$env:PGDATABASE = 'reportes_presentacion'
-$env:PGUSER = 'reportes_app'
-
-$clave = Read-Host 'Contraseña de reportes_app' -AsSecureString
-$env:PGPASSWORD = [System.Net.NetworkCredential]::new('', $clave).Password
+.\scripts\iniciar_local.ps1
 ```
 
-Introducimos la contraseña de `reportes_app`, no necesariamente la del usuario
-administrador. Estas variables duran en esta sesión; si cerramos PowerShell,
-debemos configurarlas de nuevo. No guardamos contraseñas en el repositorio.
+Docker Desktop debe estar abierto. El script espera a que PostgreSQL esté listo
+antes de abrir la aplicación. Para iniciar solo la base:
+
+```powershell
+.\scripts\iniciar_local.ps1 -SoloBase
+```
+
+El menú gráfico y los comandos de consola conectan usando `PGHOST`, `PGPORT`,
+`PGDATABASE`, `PGUSER` y `PGPASSWORD` definidos en `.env`. Para el proyecto
+Docker local, el puerto publicado es `5434`.
 
 Si Windows bloquea la biblioteca binaria de Psycopg, utilizamos la implementación
 Python con la biblioteca de PostgreSQL instalada. Ajustamos `18` si instalamos
@@ -130,6 +135,14 @@ fecha,producto,categoria,cantidad,precio_unitario
 2026-08-01,Cuaderno,Oficina,10,6.75
 2026-08-01,Monitor,Tecnología,0,120.00
 ```
+
+Este archivo pequeño se conserva para las pruebas automatizadas y para repetir
+el total de ejemplo. El menú gráfico preselecciona
+`data/examples/ventas_ejemplo_ampliado.csv`, con 25 ventas válidas y una fila
+inválida repartidas en cinco categorías. Al importarlo, PostgreSQL guarda un
+lote nuevo porque el archivo tiene otro contenido; el reporte suma también las
+ventas que ya existan en la base. Para ver solo el lote ampliado, utiliza una
+base de demostración vacía; no borres las ventas existentes.
 
 La fila de Monitor tiene cantidad cero. La descartamos y mostramos su número
 original, mientras continuamos con las tres ventas válidas.
@@ -296,27 +309,22 @@ Conservamos dos demostraciones auxiliares:
 
 ## Pruebas automatizadas
 
-Verificamos la entrega con **31 pruebas aprobadas**, incluidas las de PostgreSQL
-real y el recorrido completo. El detalle está en el
+La suite contiene **42 pruebas**, incluidas las de PostgreSQL real y el recorrido
+completo. El detalle histórico está en el
 [registro de verificación](docs/verificacion_entrega.md).
 
-Para repetir la suite, creamos en pgAdmin una base separada llamada
-`reportes_ventas_test`, con `reportes_app` como propietario. Con la conexión y
-contraseña configuradas en PowerShell:
+Para repetirlas localmente, iniciamos PostgreSQL y ejecutamos el preparador de
+pruebas. Lee la conexión de `.env`, crea `reportes_pruebas` si todavía no existe
+y ejecuta toda la suite dentro de esa base:
 
 ```powershell
-$env:PGDATABASE = 'reportes_ventas_test'
-$env:POSTGRES_TEST_DATABASE = 'reportes_ventas_test'
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+\.venv\Scripts\python.exe scripts\run_postgres_tests.py
 ```
 
-Usamos esquemas temporales dentro de esa base; no vaciamos las tablas públicas.
-Sin esas variables, las pruebas de PostgreSQL se omiten. Para volver a la demo:
-
-```powershell
-Remove-Item Env:POSTGRES_TEST_DATABASE
-$env:PGDATABASE = 'reportes_presentacion'
-```
+Las pruebas usan esquemas temporales que eliminan al terminar. No modifican la
+base `reportes_presentacion` ni sus ventas. Si ejecutamos directamente
+`unittest discover`, las pruebas de PostgreSQL se omiten salvo que se configure
+explícitamente la base aislada mediante `PGDATABASE` y `POSTGRES_TEST_DATABASE`.
 
 ## Presentación del trabajo
 
@@ -411,16 +419,17 @@ duplicados aplica al mismo archivo y fila, no a ventas similares en otros lotes.
 
 ## Menú gráfico de escritorio
 
-Para abrir el panel de funcionalidades en Windows:
+También podemos abrir el panel y la base local con:
 
 ```powershell
-.\.venv\Scripts\python.exe menu_grafico.py
+.\scripts\iniciar_local.ps1
 ```
 
-Introduce servidor, puerto, base, usuario y contraseña en la ventana. Pulsa
-**Probar conexión** y, si hace falta, **Crear tablas**. La base y el usuario deben
-estar creados previamente en PostgreSQL. La contraseña no se guarda en archivos.
-Selecciona el CSV y el destino TXT; luego utiliza **Importar CSV + TXT y QR**
+El menú toma la conexión desde `.env`; el campo de contraseña aparece rellenado
+y oculto. Pulsa **Probar conexión** y, si hace falta, **Crear tablas**.
+El CSV preseleccionado tiene 25 ventas válidas de cinco categorías y una fila
+inválida para mostrar la validación. Puedes seleccionar otro CSV. Luego elige
+el destino TXT y utiliza **Importar CSV + TXT y QR**
 o **Solo reporte + QR**. Este último consulta las ventas persistidas sin importar.
 El resultado y las incidencias aparecen en la ventana. **Abrir TXT** y **Abrir QR**
 muestran los últimos archivos generados desde el panel. El QR contiene las
